@@ -4,8 +4,30 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+int ipv4h_error = 0;
+
+enum IPV4H_ERROR {
+  OK = 0,
+  INVALID_ADDRESS = -1,
+  INVALID_MASK = -2,
+};
+
+const char *ipv4h_error_str() {
+  switch (ipv4h_error) {
+  case INVALID_ADDRESS:
+    return "Get invalid ipv4 address!";
+  case INVALID_MASK:
+    return "Get invalid ipv4 mask!";
+  case OK:
+    return "Success";
+  default:
+    return "Unkown error!";
+  }
+}
+
 int bytes2netmask(const uint8_t bytes[IPV4_ADDRESS_SIZE]) {
   if (!bytes) {
+    ipv4h_error = INVALID_MASK;
     return -1;
   }
 
@@ -25,6 +47,7 @@ int bytes2netmask(const uint8_t bytes[IPV4_ADDRESS_SIZE]) {
 
 int netmask2bytes(uint8_t out_bytes[IPV4_ADDRESS_SIZE], int netmask) {
   if (!out_bytes) {
+    ipv4h_error = INVALID_MASK;
     return -1;
   }
 
@@ -52,7 +75,13 @@ int netmask2bytes(uint8_t out_bytes[IPV4_ADDRESS_SIZE], int netmask) {
 ipv4_address ipv4_address_with_netmask_bytes(
     const uint8_t address_bytes[IPV4_ADDRESS_SIZE],
     const uint8_t netmask_bytes[IPV4_ADDRESS_SIZE]) {
-  if (!address_bytes || !netmask_bytes) {
+  if (!address_bytes) {
+    ipv4h_error = INVALID_ADDRESS;
+    return (ipv4_address){0};
+  }
+
+  if (!netmask_bytes) {
+    ipv4h_error = INVALID_MASK;
     return (ipv4_address){0};
   }
 
@@ -70,10 +99,12 @@ ipv4_address
 ipv4_address_with_netmask(const uint8_t address_bytes[IPV4_ADDRESS_SIZE],
                           int netmask) {
   if (!address_bytes) {
+    ipv4h_error = INVALID_ADDRESS;
     return (ipv4_address){0};
   }
 
   if (netmask > IPV4_ADDRESS_BYTES) {
+    ipv4h_error = INVALID_MASK;
     return (ipv4_address){0};
   }
 

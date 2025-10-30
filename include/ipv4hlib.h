@@ -26,6 +26,11 @@
   bytes[2] = third_octate;                                                                         \
   bytes[3] = fourth_octate;
 
+extern int ipv4h_error;
+
+/// @return error message
+const char *ipv4h_error_str();
+
 /// Struct for representing IPv4 addresses
 typedef struct ipv4_address {
   uint8_t address_data[IPV4_ADDRESS_SIZE]; // Static array of address bytes
