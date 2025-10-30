@@ -1,6 +1,62 @@
 #ifndef IPV4HLIB_H
 #define IPV4HLIB_H
 
-//TODO:
+#include <stdbool.h>
+#include <stdint.h>
+
+#define IPV4_ADDRESS_BYTES 32 // bytes
+#define IPV4_ADDRESS_SIZE IPV4_ADDRESS_BYTES / 8 // octates
+
+#define CLASS_A_NETMASK 8
+#define CLASS_B_NETMASK 16
+#define CLASS_C_NETMASK 24
+
+#define IS_A_CLASS(first_octate) first_octate >= 1 && first_octate <= 126
+#define IS_B_CLASS(first_octate) first_octate >= 128 && first_octate <= 191
+#define IS_C_CLASS(first_octate) first_octate >= 192 && first_octate <= 233
+#define IS_D_CLASS(first_octate) first_octate >= 224 && first_octate <= 239
+#define IS_E_CLASS(first_octate) first_octate >= 240 && first_octate <= 254
+
+#define INIT_BYTES(first_octate, second_octate, third_octate, fourth_octate)                       \
+  (uint8_t[]) { first_octate, second_octate, third_octate, fourth_octate }
+
+#define FILL_BYTES(bytes, first_octate, second_octate, third_octate, fourth_octate)                \
+  bytes[0] = first_octate;                                                                         \
+  bytes[1] = second_octate;                                                                        \
+  bytes[2] = third_octate;                                                                         \
+  bytes[3] = fourth_octate;
+
+
+/// Struct for representing IPv4 addresses
+typedef struct ipv4_address {
+  uint8_t address_data[IPV4_ADDRESS_SIZE]; // Static array of address bytes
+  uint8_t netmask_data[IPV4_ADDRESS_SIZE];    // Static array of netmask bytes
+
+} ipv4_address;
+
+
+/// @brief Convert netmask's bytes into number
+int bytes2netmask(const uint8_t bytes[IPV4_ADDRESS_SIZE]);
+
+/// @brief Convert number into netmask's bytes
+int netmask2bytes(uint8_t out_bytes[IPV4_ADDRESS_SIZE], int netmask);
+
+/*--------------------------------Constructors----------------------------------*/
+
+/// @brief Init ipv4 address from address and netmask bytes
+ipv4_address ipv4_address_with_netmask_bytes(const uint8_t address_bytes[IPV4_ADDRESS_SIZE],
+                                          const uint8_t netmask_bytes[IPV4_ADDRESS_SIZE]);
+
+/// @brief Init ipv4 address from address and netmask number
+ipv4_address ipv4_address_with_netmask(const uint8_t address_bytes[IPV4_ADDRESS_SIZE], int netmask);
+
+/// @brief Init ipv4 address from address bytes
+ipv4_address ipv4_address_from_address_bytes(const uint8_t address_bytes[IPV4_ADDRESS_SIZE]);
+
+/// @brief Init ipv4 address
+/// (a.b.c.d)
+#define ipv4_address_new(a,b,c,d) ipv4_address_from_address_bytes(INIT_BYTES(a,b,c,d))
+
+/*--------------------------------Constructors----------------------------------*/
 
 #endif // IPV4HLIB_H
