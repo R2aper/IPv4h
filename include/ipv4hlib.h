@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define IPV4_ADDRESS_BYTES 32 // bytes
+#define IPV4_ADDRESS_BYTES 32                    // bytes
 #define IPV4_ADDRESS_SIZE IPV4_ADDRESS_BYTES / 8 // octates
 
 #define CLASS_A_NETMASK 8
@@ -26,14 +26,12 @@
   bytes[2] = third_octate;                                                                         \
   bytes[3] = fourth_octate;
 
-
 /// Struct for representing IPv4 addresses
 typedef struct ipv4_address {
   uint8_t address_data[IPV4_ADDRESS_SIZE]; // Static array of address bytes
-  uint8_t netmask_data[IPV4_ADDRESS_SIZE];    // Static array of netmask bytes
+  uint8_t netmask_data[IPV4_ADDRESS_SIZE]; // Static array of netmask bytes
 
 } ipv4_address;
-
 
 /// @brief Convert netmask's bytes into number
 int bytes2netmask(const uint8_t bytes[IPV4_ADDRESS_SIZE]);
@@ -45,7 +43,7 @@ int netmask2bytes(uint8_t out_bytes[IPV4_ADDRESS_SIZE], int netmask);
 
 /// @brief Init ipv4 address from address and netmask bytes
 ipv4_address ipv4_address_with_netmask_bytes(const uint8_t address_bytes[IPV4_ADDRESS_SIZE],
-                                          const uint8_t netmask_bytes[IPV4_ADDRESS_SIZE]);
+                                             const uint8_t netmask_bytes[IPV4_ADDRESS_SIZE]);
 
 /// @brief Init ipv4 address from address and netmask number
 ipv4_address ipv4_address_with_netmask(const uint8_t address_bytes[IPV4_ADDRESS_SIZE], int netmask);
@@ -55,8 +53,27 @@ ipv4_address ipv4_address_from_address_bytes(const uint8_t address_bytes[IPV4_AD
 
 /// @brief Init ipv4 address
 /// (a.b.c.d)
-#define ipv4_address_new(a,b,c,d) ipv4_address_from_address_bytes(INIT_BYTES(a,b,c,d))
+#define ipv4_address_new(a, b, c, d) ipv4_address_from_address_bytes(INIT_BYTES(a, b, c, d))
 
 /*--------------------------------Constructors----------------------------------*/
+
+/// @return number of available hosts of @a address
+uint32_t available_hosts(const ipv4_address a);
+
+/// @return network address by using mask
+ipv4_address network_address(const ipv4_address a);
+
+/// @return broadcast address by using mask
+ipv4_address broadcast_address(const ipv4_address a);
+
+/// @return @a class(based on first octate of address bytes)
+char get_address_class(const ipv4_address a);
+
+/// @brief print ipv4 address into stdout
+void ipv4_address_print(const ipv4_address a, bool use_CIDR_notation);
+
+#define ipv4_address_println(a, use_CIDR_notation)                                                 \
+  ipv4_address_print(a, use_CIDR_notation);                                                        \
+  putchar('\n')
 
 #endif // IPV4HLIB_H

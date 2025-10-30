@@ -101,3 +101,66 @@ ipv4_address ipv4_address_from_address_bytes(
 }
 
 /*--------------------------------Constructors----------------------------------*/
+
+uint32_t available_hosts(const ipv4_address a) {
+  // 2^(32 - mask) - 2
+  return pow(2, (IPV4_ADDRESS_BYTES - bytes2netmask(a.netmask_data))) - 2;
+}
+
+ipv4_address network_address(const ipv4_address a) {
+  ipv4_address ntwk;
+  FILL_BYTES(ntwk.address_data, 0, 0, 0, 0);
+  FILL_BYTES(ntwk.netmask_data, 0, 0, 0, 0);
+
+  // network address = (address byte and netmask byte)
+  for (size_t i = 0; i < IPV4_ADDRESS_SIZE; i++)
+    ntwk.address_data[i] = a.address_data[i] & a.netmask_data[i];
+
+  return ntwk;
+}
+
+ipv4_address broadcast_address(const ipv4_address a) {
+  ipv4_address b;
+  FILL_BYTES(b.address_data, 0, 0, 0, 0);
+  FILL_BYTES(b.netmask_data, 0, 0, 0, 0);
+
+  // broadcast address = (address byte or !mask byte)
+  for (size_t i = 0; i < IPV4_ADDRESS_SIZE; i++)
+    b.address_data[i] = a.address_data[i] | ~a.netmask_data[i];
+
+  return b;
+}
+
+char get_address_class(const ipv4_address a) {
+  if (IS_A_CLASS(a.address_data[0]))
+    return 'A';
+
+  if (IS_B_CLASS(a.address_data[0]))
+    return 'B';
+
+  if (IS_C_CLASS(a.address_data[0]))
+    return 'C';
+
+  if (IS_D_CLASS(a.address_data[0]))
+    return 'D';
+
+  if (IS_E_CLASS(a.address_data[0]))
+    return 'E';
+
+  return -1;
+}
+
+void ipv4_address_print(const ipv4_address a, bool use_CIDR_notation) {
+  printf("%u.%u.%u.%u", a.address_data[0], a.address_data[1], a.address_data[2],
+         a.address_data[3]);
+
+  int netmask = bytes2netmask(a.netmask_data);
+
+  if (netmask != 0) {
+    if (use_CIDR_notation)
+      printf("/%d", bytes2netmask(a.netmask_data));
+    else
+      printf(".%u.%u.%u.%u", a.netmask_data[0], a.netmask_data[1],
+             a.netmask_data[2], a.netmask_data[3]);
+  }
+}

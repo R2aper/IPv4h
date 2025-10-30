@@ -7,8 +7,20 @@ int main(int argc, char **argv) {
   (void)argv;
 
   ipv4_address a = ipv4_address_new(198, 0, 0, 1);
-  printf("%d.%d.%d.%d/%d\n", a.address_data[0], a.address_data[1],
-         a.address_data[2], a.address_data[3], bytes2netmask(a.netmask_data));
+  printf("Ip-address:");
+  ipv4_address_println(a, true);
+
+  printf("Class:'%c'\n", get_address_class(a));
+
+  ipv4_address network_a = network_address(a);
+  printf("Network address:");
+  ipv4_address_println(network_a, true);
+
+  printf("Broadcast address:");
+  ipv4_address broadcast_a = broadcast_address(a);
+  ipv4_address_println(broadcast_a, true);
+
+  printf("Available hosts:%u\n", available_hosts(a));
 
   return 0;
 }
