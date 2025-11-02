@@ -26,6 +26,11 @@
   bytes[2] = third_octate;                                                                         \
   bytes[3] = fourth_octate;
 
+#define IPV4_ADDRESS_IS_ZERO(a)                                                                    \
+  (a.address_data[0] == 0 && a.address_data[1] == 0 && a.address_data[2] == 0 &&                   \
+   a.address_data[3] == 0 && a.netmask_data[0] == 0 && a.netmask_data[1] == 0 &&                   \
+   a.netmask_data[2] == 0 && a.netmask_data[3] == 0)
+
 extern int ipv4h_error;
 
 /// @return error message
@@ -55,6 +60,9 @@ ipv4_address ipv4_address_with_netmask(const uint8_t address_bytes[IPV4_ADDRESS_
 
 /// @brief Init ipv4 address from address bytes
 ipv4_address ipv4_address_from_address_bytes(const uint8_t address_bytes[IPV4_ADDRESS_SIZE]);
+
+/// @brief Init ipv4 address from string
+ipv4_address ipv4_address_from_str(const char *str);
 
 /// @brief Init ipv4 address
 /// (a.b.c.d)

@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 int ipv4h_error = 0;
 
@@ -10,6 +11,10 @@ enum IPV4H_ERROR {
   OK = 0,
   INVALID_ADDRESS = -1,
   INVALID_MASK = -2,
+  INVALID_ADDRESS_STRING = -3,
+  INVALID_STRING_LENGTH = -4,
+  PARSING_ERROR = -5,
+
 };
 
 const char *ipv4h_error_str() {
@@ -18,6 +23,12 @@ const char *ipv4h_error_str() {
     return "Get invalid ipv4 address!";
   case INVALID_MASK:
     return "Get invalid ipv4 mask!";
+  case INVALID_ADDRESS_STRING:
+    return "Get invalid ipv4 address from string!";
+  case INVALID_STRING_LENGTH:
+    return "Ipv4 address have invalid length!";
+  case PARSING_ERROR:
+    return "Parsing ipv4 address failed!";
   case OK:
     return "Success";
   default:
@@ -55,16 +66,16 @@ int netmask2bytes(uint8_t out_bytes[IPV4_ADDRESS_SIZE], int netmask) {
 
   for (int i = 0; i < netmask; i++) {
     if (i < 8) // first octate
-      out_bytes[0] += powl(2, i % 8);
+      out_bytes[0] += powl(2, 7 - i % 8);
 
     if (i >= 8 && i < 16) // second octate
-      out_bytes[1] += powl(2, i % 8);
+      out_bytes[1] += powl(2, 7 - i % 8);
 
     if (i >= 16 && i < 24) // third octate
-      out_bytes[2] += powl(2, i % 8);
+      out_bytes[2] += powl(2, 7 - i % 8);
 
     if (i >= 24 && i < 32) // fourth octate
-      out_bytes[3] += powl(2, i % 8);
+      out_bytes[3] += powl(2, 7 - i % 8);
   }
 
   return 0;
@@ -115,6 +126,92 @@ ipv4_address_with_netmask(const uint8_t address_bytes[IPV4_ADDRESS_SIZE],
     a.address_data[i] = address_bytes[i];
 
   return a;
+}
+
+static ipv4_address ipv4_address_from_str_with_netmask(const char *buff_str,
+                                                       char *slash_pos) {
+  ipv4_address a;
+  FILL_BYTES(a.address_data, 0, 0, 0, 0);
+  FILL_BYTES(a.netmask_data, 0, 0, 0, 0);
+
+  *slash_pos = '\0';
+  slash_pos++;
+
+  // Read address
+  if (sscanf(buff_str, "%hhu.%hhu.%hhu.%hhu", &a.address_data[0],
+             &a.address_data[1], &a.address_data[2], &a.address_data[3]) != 4) {
+    ipv4h_error = PARSING_ERROR;
+    return (ipv4_address){0};
+  }
+
+  // Read netmask
+  int netmask = 0;
+  if (sscanf(slash_pos, "%d", &netmask) != 1) {
+    ipv4h_error = PARSING_ERROR;
+    return (ipv4_address){0};
+  }
+
+  if (netmask > IPV4_ADDRESS_BYTES) {
+    ipv4h_error = INVALID_MASK;
+    return (ipv4_address){0};
+  }
+
+  // Convert netmask to bytes
+  netmask2bytes(a.netmask_data, netmask);
+
+  return a;
+}
+
+static ipv4_address
+ipv4_address_from_str_with_netmask_bytes(const char *buff_str) {
+  ipv4_address a;
+  FILL_BYTES(a.address_data, 0, 0, 0, 0);
+  FILL_BYTES(a.netmask_data, 0, 0, 0, 0);
+
+  int count = sscanf(buff_str, "%hhu.%hhu.%hhu.%hhu.%hhu.%hhu.%hhu.%hhu",
+                     &a.address_data[0], &a.address_data[1], &a.address_data[2],
+                     &a.address_data[3], &a.netmask_data[0], &a.netmask_data[1],
+                     &a.netmask_data[2], &a.netmask_data[3]);
+
+  return (count == 8) ? a : (ipv4_address){0};
+}
+
+ipv4_address ipv4_address_from_str(const char *str) {
+  if (!str) {
+    ipv4h_error = INVALID_ADDRESS_STRING;
+    return (ipv4_address){0};
+  }
+
+  size_t str_len = strlen(str);
+  if (str_len < 7 || str_len > 256) {
+    ipv4h_error = INVALID_STRING_LENGTH;
+    return (ipv4_address){0};
+  }
+
+  ipv4_address a;
+  FILL_BYTES(a.address_data, 0, 0, 0, 0);
+  FILL_BYTES(a.netmask_data, 0, 0, 0, 0);
+
+  char buff[256];
+  strncpy(buff, str, sizeof(buff) - 1);
+  buff[sizeof(buff) - 1] = '\0';
+
+  char *slash_pos = strchr(buff, '/');
+  if (slash_pos) // String format: '0.0.0.0/0'
+    return ipv4_address_from_str_with_netmask(buff, slash_pos);
+
+  a = ipv4_address_from_str_with_netmask_bytes(buff);
+  if (!IPV4_ADDRESS_IS_ZERO(a)) // String format: '0.0.0.0.0.0.0.0'
+    return a;
+
+  // String format: '0.0.0.0'
+  if (sscanf(buff, "%hhu.%hhu.%hhu.%hhu", &a.address_data[0],
+             &a.address_data[1], &a.address_data[2], &a.address_data[3]) != 4) {
+    ipv4h_error = PARSING_ERROR;
+    return (ipv4_address){0};
+  }
+
+  return ipv4_address_from_address_bytes(a.address_data);
 }
 
 ipv4_address ipv4_address_from_address_bytes(
