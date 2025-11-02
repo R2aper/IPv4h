@@ -16,8 +16,8 @@ To build the project, you can use the provided `Makefile`.
 
 ### Dependencies
 
-- `gcc`
-- `make`
+- `C compiler`
+- `make or meson`
 
 ### Instructions
 
@@ -28,7 +28,7 @@ To build the project, you can use the provided `Makefile`.
     cd ipv4h
     ```
 
-2.  **Build the project:**
+2.  **Build the project with make:**
 
     ```bash
     make
