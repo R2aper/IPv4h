@@ -11,11 +11,11 @@
 #define CLASS_B_NETMASK 16
 #define CLASS_C_NETMASK 24
 
-#define IS_A_CLASS(first_octate) first_octate >= 1 && first_octate <= 126
+#define IS_A_CLASS(first_octate) first_octate >= 0 && first_octate <= 127
 #define IS_B_CLASS(first_octate) first_octate >= 128 && first_octate <= 191
-#define IS_C_CLASS(first_octate) first_octate >= 192 && first_octate <= 233
+#define IS_C_CLASS(first_octate) first_octate >= 192 && first_octate <= 223
 #define IS_D_CLASS(first_octate) first_octate >= 224 && first_octate <= 239
-#define IS_E_CLASS(first_octate) first_octate >= 240 && first_octate <= 254
+#define IS_E_CLASS(first_octate) first_octate >= 240 && first_octate <= 255
 
 #define INIT_BYTES(first_octate, second_octate, third_octate, fourth_octate)                       \
   (uint8_t[]) { first_octate, second_octate, third_octate, fourth_octate }
