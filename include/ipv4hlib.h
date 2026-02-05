@@ -4,6 +4,13 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define DEFINE_ARRAY_T(name, type)                                                                 \
+  typedef struct name {                                                                            \
+    type *data;                                                                                    \
+    size_t size;                                                                                   \
+    size_t capacity;                                                                               \
+  } name;
+
 #define IPV4_ADDRESS_BYTES 32                    // bytes
 #define IPV4_ADDRESS_SIZE IPV4_ADDRESS_BYTES / 8 // octates
 

@@ -42,50 +42,45 @@ int bytes2netmask(const uint8_t bytes[IPV4_ADDRESS_SIZE]) {
     return -1;
   }
 
-  // count 1 in bytes
+  uint32_t m = ((uint32_t)bytes[0] << 24) | ((uint32_t)bytes[1] << 16) | ((uint32_t)bytes[2] << 8) |
+               ((uint32_t)bytes[3]);
+
+  if ((~m & (~m + 1)) != 0) { // Check invalid mask
+    ipv4h_error = INVALID_MASK;
+    return -1;
+  }
+
   int netmask = 0;
-  for (size_t i = 0; i < IPV4_ADDRESS_SIZE; i++) {
-    uint8_t n = bytes[i];
-    for (size_t j = 0; n > 0; j++) {
-      if (n % 2)
-        netmask++;
-      n = n / 2;
-    }
+  while (m > 0) {
+    if (m % 2)
+      netmask++;
+
+    m /= 2;
   }
 
   return netmask;
 }
 
 int netmask2bytes(uint8_t out_bytes[IPV4_ADDRESS_SIZE], int netmask) {
-  if (!out_bytes) {
+  if (!out_bytes || netmask > 32) {
     ipv4h_error = INVALID_MASK;
     return -1;
   }
 
-  FILL_BYTES(out_bytes, 0, 0, 0, 0);
+  uint32_t mask = (netmask == 0) ? 0x00000000U : (0xFFFFFFFFU << (32 - netmask));
 
-  for (int i = 0; i < netmask; i++) {
-    if (i < 8) // first octate
-      out_bytes[0] += powl(2, 7 - i % 8);
-
-    if (i >= 8 && i < 16) // second octate
-      out_bytes[1] += powl(2, 7 - i % 8);
-
-    if (i >= 16 && i < 24) // third octate
-      out_bytes[2] += powl(2, 7 - i % 8);
-
-    if (i >= 24 && i < 32) // fourth octate
-      out_bytes[3] += powl(2, 7 - i % 8);
-  }
+  out_bytes[0] = (mask >> 24) & 0xFF;
+  out_bytes[1] = (mask >> 16) & 0xFF;
+  out_bytes[2] = (mask >> 8) & 0xFF;
+  out_bytes[3] = mask & 0xFF;
 
   return 0;
 }
 
 /*--------------------------------Constructors----------------------------------*/
 
-ipv4_address ipv4_address_with_netmask_bytes(
-    const uint8_t address_bytes[IPV4_ADDRESS_SIZE],
-    const uint8_t netmask_bytes[IPV4_ADDRESS_SIZE]) {
+ipv4_address ipv4_address_with_netmask_bytes(const uint8_t address_bytes[IPV4_ADDRESS_SIZE],
+                                             const uint8_t netmask_bytes[IPV4_ADDRESS_SIZE]) {
   if (!address_bytes) {
     ipv4h_error = INVALID_ADDRESS;
     return (ipv4_address){0};
@@ -106,9 +101,8 @@ ipv4_address ipv4_address_with_netmask_bytes(
   return a;
 }
 
-ipv4_address
-ipv4_address_with_netmask(const uint8_t address_bytes[IPV4_ADDRESS_SIZE],
-                          int netmask) {
+ipv4_address ipv4_address_with_netmask(const uint8_t address_bytes[IPV4_ADDRESS_SIZE],
+                                       int netmask) {
   if (!address_bytes) {
     ipv4h_error = INVALID_ADDRESS;
     return (ipv4_address){0};
@@ -128,8 +122,7 @@ ipv4_address_with_netmask(const uint8_t address_bytes[IPV4_ADDRESS_SIZE],
   return a;
 }
 
-static ipv4_address ipv4_address_from_str_with_netmask(const char *buff_str,
-                                                       char *slash_pos) {
+static ipv4_address ipv4_address_from_str_with_netmask(const char *buff_str, char *slash_pos) {
   ipv4_address a;
   FILL_BYTES(a.address_data, 0, 0, 0, 0);
   FILL_BYTES(a.netmask_data, 0, 0, 0, 0);
@@ -138,8 +131,8 @@ static ipv4_address ipv4_address_from_str_with_netmask(const char *buff_str,
   slash_pos++;
 
   // Read address
-  if (sscanf(buff_str, "%hhu.%hhu.%hhu.%hhu", &a.address_data[0],
-             &a.address_data[1], &a.address_data[2], &a.address_data[3]) != 4) {
+  if (sscanf(buff_str, "%hhu.%hhu.%hhu.%hhu", &a.address_data[0], &a.address_data[1],
+             &a.address_data[2], &a.address_data[3]) != 4) {
     ipv4h_error = PARSING_ERROR;
     return (ipv4_address){0};
   }
@@ -162,16 +155,14 @@ static ipv4_address ipv4_address_from_str_with_netmask(const char *buff_str,
   return a;
 }
 
-static ipv4_address
-ipv4_address_from_str_with_netmask_bytes(const char *buff_str) {
+static ipv4_address ipv4_address_from_str_with_netmask_bytes(const char *buff_str) {
   ipv4_address a;
   FILL_BYTES(a.address_data, 0, 0, 0, 0);
   FILL_BYTES(a.netmask_data, 0, 0, 0, 0);
 
-  int count = sscanf(buff_str, "%hhu.%hhu.%hhu.%hhu.%hhu.%hhu.%hhu.%hhu",
-                     &a.address_data[0], &a.address_data[1], &a.address_data[2],
-                     &a.address_data[3], &a.netmask_data[0], &a.netmask_data[1],
-                     &a.netmask_data[2], &a.netmask_data[3]);
+  int count = sscanf(buff_str, "%hhu.%hhu.%hhu.%hhu.%hhu.%hhu.%hhu.%hhu", &a.address_data[0],
+                     &a.address_data[1], &a.address_data[2], &a.address_data[3], &a.netmask_data[0],
+                     &a.netmask_data[1], &a.netmask_data[2], &a.netmask_data[3]);
 
   return (count == 8) ? a : (ipv4_address){0};
 }
@@ -205,8 +196,8 @@ ipv4_address ipv4_address_from_str(const char *str) {
     return a;
 
   // String format: '0.0.0.0'
-  if (sscanf(buff, "%hhu.%hhu.%hhu.%hhu", &a.address_data[0],
-             &a.address_data[1], &a.address_data[2], &a.address_data[3]) != 4) {
+  if (sscanf(buff, "%hhu.%hhu.%hhu.%hhu", &a.address_data[0], &a.address_data[1],
+             &a.address_data[2], &a.address_data[3]) != 4) {
     ipv4h_error = PARSING_ERROR;
     return (ipv4_address){0};
   }
@@ -214,8 +205,7 @@ ipv4_address ipv4_address_from_str(const char *str) {
   return ipv4_address_from_address_bytes(a.address_data);
 }
 
-ipv4_address ipv4_address_from_address_bytes(
-    const uint8_t address_bytes[IPV4_ADDRESS_SIZE]) {
+ipv4_address ipv4_address_from_address_bytes(const uint8_t address_bytes[IPV4_ADDRESS_SIZE]) {
   if (IS_A_CLASS(address_bytes[0]))
     return ipv4_address_with_netmask(address_bytes, CLASS_A_NETMASK);
 
@@ -279,16 +269,15 @@ char get_address_class(const ipv4_address a) {
 }
 
 void ipv4_address_print(const ipv4_address a, bool use_CIDR_notation) {
-  printf("%u.%u.%u.%u", a.address_data[0], a.address_data[1], a.address_data[2],
-         a.address_data[3]);
+  printf("%u.%u.%u.%u", a.address_data[0], a.address_data[1], a.address_data[2], a.address_data[3]);
 
   int netmask = bytes2netmask(a.netmask_data);
 
   if (netmask != 0) {
     if (use_CIDR_notation)
-      printf("/%d", bytes2netmask(a.netmask_data));
+      printf("/%d", netmask);
     else
-      printf(".%u.%u.%u.%u", a.netmask_data[0], a.netmask_data[1],
-             a.netmask_data[2], a.netmask_data[3]);
+      printf(".%u.%u.%u.%u", a.netmask_data[0], a.netmask_data[1], a.netmask_data[2],
+             a.netmask_data[3]);
   }
 }
